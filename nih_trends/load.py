@@ -5,11 +5,9 @@ import tempfile
 import itertools
 
 from nih_trends.meta import session
-from nih_trends.models import Award
-from nih_trends.schemas import AwardSchema
 
-def load_awards(filename, chunk_size=500):
-    schema = AwardSchema()
+def load_records(filename, model, schema_class, attr, chunk_size=500):
+    schema = schema_class()
     for fp in iter_files(filename):
         reader = csv.DictReader(fp)
         while True:
@@ -17,13 +15,13 @@ def load_awards(filename, chunk_size=500):
             if not chunk:
                 break
             instances = {
-                instance.application_id: instance for instance in
-                session.query(Award).filter(Award.application_id.in_(
-                    int(row['APPLICATION_ID']) for row in chunk)
+                getattr(instance, attr): instance for instance in
+                session.query(model).filter(getattr(model, attr).in_(
+                    int(row[attr.upper()]) for row in chunk)
                 )
             }
             for row in chunk:
-                instance = instances.get(int(row['APPLICATION_ID']), Award())
+                instance = instances.get(int(row[attr.upper()]), model())
                 result = schema.load(row, instance=instance)
                 session.add(result.data)
             session.commit()

@@ -41,4 +41,10 @@ class Award(Base):
     total_cost = sa.Column(sa.Numeric(30, 2))
     total_cost_sub_project = sa.Column(sa.Numeric(30, 2))
 
+class Abstract(Base):
+    __tablename__ = 'abstract'
+
+    application_id = sa.Column(sa.Integer, primary_key=True)
+    abstract_text = sa.Column(sa.Text)
+
 Base.metadata.create_all(engine)
