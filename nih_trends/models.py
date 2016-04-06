@@ -13,7 +13,7 @@ class Award(Base):
     application_id = sa.Column(sa.Integer, primary_key=True)
     activity = sa.Column(sa.Text, index=True)
     administering_ic = sa.Column(sa.Text, index=True)
-    application_type = sa.Column(sa.Text)
+    application_type = sa.Column(sa.Integer, index=True)
     arra_funded = sa.Column(sa.Boolean)
     award_notice_date = sa.Column(sa.Date)
     budget_start = sa.Column(sa.Date)
@@ -46,5 +46,17 @@ class Abstract(Base):
 
     application_id = sa.Column(sa.Integer, primary_key=True)
     abstract_text = sa.Column(sa.Text)
+
+class MtiTerm(Base):
+    __tablename__ = 'mti_term'
+
+    application_id = sa.Column(sa.Integer, primary_key=True)
+    cui = sa.Column(sa.Text, primary_key=True)
+    term = sa.Column(sa.Text)
+    score = sa.Column(sa.Text)
+    type = sa.Column(sa.Text)
+    misc = sa.Column(sa.Text)
+    location = sa.Column(sa.Text)
+    path = sa.Column(sa.Text)
 
 Base.metadata.create_all(engine)

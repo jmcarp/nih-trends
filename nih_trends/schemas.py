@@ -2,7 +2,7 @@ from marshmallow import fields, pre_load
 from marshmallow_sqlalchemy import ModelSchema
 
 from nih_trends.meta import session
-from nih_trends.models import Award, Abstract
+from nih_trends.models import Award, Abstract, MtiTerm
 
 class Boolean(fields.Boolean):
     truthy = fields.Boolean.truthy | {'Y'}
@@ -53,6 +53,12 @@ class AbstractSchema(ModelSchema):
     @pre_load
     def clean_data(self, data):
         return {key.lower(): value for key, value in data.items()}
+
+class MtiTermSchema(ModelSchema):
+    class Meta:
+        model = MtiTerm
+        sqla_session = session
+        strict = True
 
 def split_delimited(value, delimiter=';'):
     values = value.lower().split(delimiter)
