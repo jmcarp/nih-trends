@@ -5,8 +5,6 @@ import tempfile
 import itertools
 
 from nih_trends.meta import session
-from nih_trends.models import MtiTerm
-from nih_trends.schemas import MtiTermSchema
 
 def load_records(filename, model, schema_class, attr, chunk_size=500):
     schema = schema_class()
@@ -27,30 +25,6 @@ def load_records(filename, model, schema_class, attr, chunk_size=500):
                 result = schema.load(row, instance=instance)
                 session.add(result.data)
             session.commit()
-
-TERM_FIELDS = (
-    'application_id', 'term', 'cui', 'score',
-    'type', 'misc', 'location', 'path',
-)
-
-def load_terms(filename):
-    schema = MtiTermSchema()
-    with open(filename) as fp:
-        reader = csv.DictReader(fp, delimiter='|', fieldnames=TERM_FIELDS)
-        rows = list(reader)
-        session.query(
-            MtiTerm
-        ).filter(
-            MtiTerm.application_id.in_(
-                int(row['application_id']) for row in rows
-            )
-        ).delete(
-            synchronize_session='fetch'
-        )
-        for row in rows:
-            result = schema.load(row, instance=MtiTerm())
-            session.add(result.data)
-        session.commit()
 
 def iter_files(filename):
     with tempfile.TemporaryDirectory() as tempdir:

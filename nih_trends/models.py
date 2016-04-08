@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects import postgresql as psql
 
 from nih_trends.meta import Base, engine
@@ -58,5 +59,19 @@ class MtiTerm(Base):
     misc = sa.Column(sa.Text)
     location = sa.Column(sa.Text)
     path = sa.Column(sa.Text)
+
+class MtiBatch(Base):
+    __tablename__ = 'mti_batch'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    done = sa.Column(sa.Boolean, index=True, default=False)
+
+
+class MtiBatchItem(Base):
+    __tablename__ = 'mti_batch_item'
+
+    application_id = sa.Column(sa.Integer, primary_key=True)
+    batch_id = sa.Column(sa.Integer, sa.ForeignKey('mti_batch.id'), index=True)
+    batch = relationship('MtiBatch', backref='items')
 
 Base.metadata.create_all(engine)
