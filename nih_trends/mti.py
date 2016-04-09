@@ -1,6 +1,7 @@
 import os
 import re
 import csv
+import logging
 
 from robobrowser import RoboBrowser
 
@@ -8,6 +9,8 @@ from nih_trends import config
 from nih_trends.meta import session
 from nih_trends.models import Award, Abstract, MtiTerm, MtiBatch, MtiBatchItem
 from nih_trends.schemas import MtiTermSchema
+
+logger = logging.getLogger(__name__)
 
 def populate_batch(size=2500):
     while True:
@@ -38,6 +41,7 @@ def get_batch_ids(size):
     )
 
 def write_batch(batch_id):
+    logger.info('Writing MTI batch {:04}'.format(batch_id))
     rows = session.query(
         Abstract,
     ).join(
@@ -46,7 +50,8 @@ def write_batch(batch_id):
     ).filter(
         MtiBatchItem.batch_id == batch_id
     )
-    path = get_batch_file(batch_id)
+    path = get_batch_file(batch_id, 'abstracts')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as fp:
         fp.writelines(
             '{}|{}\n'.format(row.application_id, row.abstract_text)
@@ -61,7 +66,7 @@ TERM_FIELDS = (
 def load_batch(batch_id):
     batch = session.query(MtiBatch).filter_by(id=batch_id).one()
     schema = MtiTermSchema()
-    with open(get_batch_file(batch_id)) as fp:
+    with open(get_batch_file(batch_id, 'terms')) as fp:
         reader = csv.DictReader(fp, delimiter='|', fieldnames=TERM_FIELDS)
         rows = list(reader)
         session.query(
@@ -79,13 +84,17 @@ def load_batch(batch_id):
     batch.done = True
     session.commit()
 
-def get_batch_file(batch_id):
-    return os.path.join(config.BATCH_PATH, 'batch-{:04d}.txt'.format(batch_id))
+def get_batch_file(batch_id, category):
+    return os.path.join(
+        config.BATCH_PATH,
+        category,
+        'batch-{:04d}.txt'.format(batch_id)
+    )
 
 MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
 MTI_CONFIRM_URL = 'http://ii.nlm.nih.gov/cgi-bin/II/Batch/UTS_Required/validate.pl?refDir='  # noqa
 MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
-MAX_SUBMIT = 1
+MAX_SUBMIT = 5
 
 class Submitter:
 
@@ -100,8 +109,9 @@ class Submitter:
         self.browser.submit_form(form)
 
     def submit(self, batch_id):
+        logger.info('Submitting MTI batch {:04}'.format(batch_id))
         batch = session.query(MtiBatch).filter_by(id=batch_id).one()
-        path = get_batch_file(batch_id)
+        path = get_batch_file(batch_id, 'abstracts')
         self.browser.open(MTI_BATCH_URL)
 
         form = self.browser.get_form()
