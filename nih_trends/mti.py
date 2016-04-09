@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 
 from robobrowser import RoboBrowser
@@ -82,7 +83,9 @@ def get_batch_file(batch_id):
     return os.path.join(config.BATCH_PATH, 'batch-{:04d}.txt'.format(batch_id))
 
 MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
-MAX_SUBMIT = 5
+MTI_CONFIRM_URL = 'http://ii.nlm.nih.gov/cgi-bin/II/Batch/UTS_Required/validate.pl?refDir='  # noqa
+MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
+MAX_SUBMIT = 1
 
 class Submitter:
 
@@ -103,11 +106,17 @@ class Submitter:
 
         form = self.browser.get_form()
         form['Email_Address'] = config.MTI_EMAIL
+        form['BatchNotes'] = config.MTI_EMAIL
         form['UpLoad_File'] = open(path)
         form['Filtering'] = ''
         form['SingLinePMID'] = 'Yes'
         form['Output'] = 'detail'
         self.browser.submit_form(form)
+
+        # Confirm submit
+        js = self.browser.find('script').text
+        param = MTI_SCHEDULE_RE.search(js).groups()[0]
+        self.browser.open(MTI_CONFIRM_URL + param)
 
         batch.submitted = True
         session.commit()
