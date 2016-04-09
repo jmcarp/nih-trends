@@ -1,6 +1,8 @@
 import os
 import csv
 
+from robobrowser import RoboBrowser
+
 from nih_trends import config
 from nih_trends.meta import session
 from nih_trends.models import Award, Abstract, MtiTerm, MtiBatch, MtiBatchItem
@@ -18,7 +20,7 @@ def populate_batch(size=2500):
         ]
         session.add(batch)
         session.commit()
-        batch.write(session)
+        write_batch(batch.id)
 
 def get_batch_ids(size):
     return session.query(
@@ -78,3 +80,50 @@ def load_batch(batch_id):
 
 def get_batch_file(batch_id):
     return os.path.join(config.BATCH_PATH, 'batch-{:04d}.txt'.format(batch_id))
+
+MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
+MAX_SUBMIT = 5
+
+class Submitter:
+
+    def __init__(self):
+        self.browser = RoboBrowser(parser='html5lib')
+
+    def login(self):
+        self.browser.open(MTI_BATCH_URL)
+        form = self.browser.get_form('fm1')
+        form['username'] = config.MTI_USERNAME
+        form['password'] = config.MTI_PASSWORD
+        self.browser.submit_form(form)
+
+    def submit(self, batch_id):
+        batch = session.query(MtiBatch).filter_by(id=batch_id).one()
+        path = get_batch_file(batch_id)
+        self.browser.open(MTI_BATCH_URL)
+
+        form = self.browser.get_form()
+        form['Email_Address'] = config.MTI_EMAIL
+        form['UpLoad_File'] = open(path)
+        form['Filtering'] = ''
+        form['SingLinePMID'] = 'Yes'
+        form['Output'] = 'detail'
+        self.browser.submit_form(form)
+
+        batch.submitted = True
+        session.commit()
+
+    @classmethod
+    def batch_submit(cls):
+        rows = session.query(
+            MtiBatch
+        ).filter_by(
+            submitted=False,
+            done=False,
+        ).limit(
+            MAX_SUBMIT
+        )
+        if rows:
+            submitter = cls()
+            submitter.login()
+            for batch in rows:
+                submitter.submit(batch.id)
