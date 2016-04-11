@@ -52,5 +52,9 @@ def mti_batch_populate():
 def mti_batch_submit():
     Submitter.batch_submit()
 
+@manager.command
+def mti_batch_fetch():
+    Submitter.batch_fetch()
+
 if __name__ == '__main__':
     manager.run()

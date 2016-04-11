@@ -2,7 +2,9 @@ import os
 import re
 import csv
 import logging
+from urllib.parse import urljoin
 
+from requests import HTTPError
 from robobrowser import RoboBrowser
 
 from nih_trends import config
@@ -91,9 +93,11 @@ def get_batch_file(batch_id, category):
         'batch-{:04d}.txt'.format(batch_id)
     )
 
+MTI_BASE_URL = 'http://ii.nlm.nih.gov'
 MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
 MTI_CONFIRM_URL = 'http://ii.nlm.nih.gov/cgi-bin/II/Batch/UTS_Required/validate.pl?refDir='  # noqa
 MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
+MTI_PATH_PREFIX = '/usr/local/apache/htdocs/II'
 MAX_SUBMIT = 5
 
 class Submitter:
@@ -129,7 +133,18 @@ class Submitter:
         self.browser.open(MTI_CONFIRM_URL + param)
 
         batch.submitted = True
+        batch.path = param
         session.commit()
+
+    def fetch(self, path, batch_id):
+        session = self.browser.session
+        path = '{}/text.out'.format(path.replace(MTI_PATH_PREFIX, ''))
+        url = urljoin(MTI_BASE_URL, path)
+        resp = session.get(url, stream=True)
+        resp.raise_for_status()
+        with open(get_batch_file(batch_id, 'terms'), 'w') as fp:
+            for chunk in resp.iter_content(chunk_size=1024):
+                fp.write(chunk)
 
     @classmethod
     def batch_submit(cls):
@@ -146,3 +161,21 @@ class Submitter:
             submitter.login()
             for batch in rows:
                 submitter.submit(batch.id)
+
+    @classmethod
+    def batch_fetch(cls):
+        submitter = cls()
+        submitter.login()
+        rows = session.query(
+            MtiBatch
+        ).filter(
+            MtiBatch.submitted == True,  # nqa
+            MtiBatch.done == False,  # noqa
+            MtiBatch.path != None,  # noqa
+        )
+        for row in rows:
+            try:
+                submitter.fetch(row.path, row.id)
+                load_batch(row.id)
+            except HTTPError as exc:
+                logger.exception(exc)

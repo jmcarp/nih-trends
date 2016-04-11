@@ -66,7 +66,7 @@ class MtiBatch(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     submitted = sa.Column(sa.Boolean, index=True, default=False)
     done = sa.Column(sa.Boolean, index=True, default=False)
-
+    path = sa.Column(sa.Text, index=True)
 
 class MtiBatchItem(Base):
     __tablename__ = 'mti_batch_item'
