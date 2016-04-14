@@ -31,12 +31,16 @@ def populate_batch(size=2500):
 def get_batch_ids(size):
     return session.query(
         Award.application_id,
+    ).join(
+        Abstract,
+        Award.application_id == Abstract.application_id,
     ).outerjoin(
         MtiBatchItem,
         Award.application_id == MtiBatchItem.application_id,
     ).filter(
         Award.activity == 'R01',
         Award.application_type == 1,
+        Abstract.abstract_text != '',
         MtiBatchItem.application_id == None,  # noqa
     ).limit(
         size
@@ -56,9 +60,21 @@ def write_batch(batch_id):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as fp:
         fp.writelines(
-            '{}|{}\n'.format(row.application_id, row.abstract_text)
+            '{}|{}\n'.format(row.application_id, clean_abstract(row.abstract_text))
             for row in rows
         )
+
+ABSTRACT_IGNORE = [
+    re.compile(r'PUBLIC HEALTH RELEVANCE:?'),
+    re.compile(r'DESCRIPTION (provided by applicant):?'),
+    re.compile(r"Description: (Applicant's Description)"),
+    re.compile(r'Primary Objective'),
+    re.compile(r'Secondary Objectives'),
+]
+def clean_abstract(text):
+    for pattern in ABSTRACT_IGNORE:
+        text = pattern.sub('', text)
+    return text
 
 TERM_FIELDS = (
     'application_id', 'term', 'cui', 'score',
@@ -96,8 +112,8 @@ def get_batch_file(batch_id, category):
 MTI_BASE_URL = 'http://ii.nlm.nih.gov'
 MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
 MTI_CONFIRM_URL = 'http://ii.nlm.nih.gov/cgi-bin/II/Batch/UTS_Required/validate.pl?refDir='  # noqa
-MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
 MTI_PATH_PREFIX = '/usr/local/apache/htdocs/II'
+MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
 MAX_SUBMIT = 5
 
 class Submitter:
@@ -142,7 +158,7 @@ class Submitter:
         url = urljoin(MTI_BASE_URL, path)
         resp = session.get(url, stream=True)
         resp.raise_for_status()
-        with open(get_batch_file(batch_id, 'terms'), 'w') as fp:
+        with open(get_batch_file(batch_id, 'terms'), 'wb') as fp:
             for chunk in resp.iter_content(chunk_size=1024):
                 fp.write(chunk)
 
