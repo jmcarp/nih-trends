@@ -52,7 +52,7 @@ class MtiTerm(Base):
     __tablename__ = 'mti_term'
 
     application_id = sa.Column(sa.Integer, primary_key=True)
-    cui = sa.Column(sa.Text, primary_key=True)
+    cui = sa.Column(sa.Text, primary_key=True, index=True)
     term = sa.Column(sa.Text)
     score = sa.Column(sa.Text)
     type = sa.Column(sa.Text)
@@ -74,5 +74,23 @@ class MtiBatchItem(Base):
     application_id = sa.Column(sa.Integer, primary_key=True)
     batch_id = sa.Column(sa.Integer, sa.ForeignKey('mti_batch.id'), index=True)
     batch = relationship('MtiBatch', backref='items')
+
+class MtiCountYear(Base):
+    __tablename__ = 'mti_count_year'
+
+    fy = sa.Column(sa.Integer, primary_key=True)
+    cui = sa.Column(sa.Text, primary_key=True, index=True)
+    term = sa.Column(sa.Text, index=True)
+    count = sa.Column(sa.Integer, index=True)
+    prop = sa.Column(sa.Numeric, index=True)
+
+class MtiDispersion(Base):
+    __tablename__ = 'mti_dispersion'
+
+    cui = sa.Column(sa.Text, primary_key=True)
+    term = sa.Column(sa.Text, index=True)
+    avg = sa.Column(sa.Numeric, index=True)
+    stddev = sa.Column(sa.Numeric, index=True)
+    disp = sa.Column(sa.Numeric, index=True)
 
 Base.metadata.create_all(engine)
