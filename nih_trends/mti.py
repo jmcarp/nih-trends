@@ -86,7 +86,7 @@ def load_batch(batch_id):
     schema = MtiTermSchema()
     with open(get_batch_file(batch_id, 'terms')) as fp:
         reader = csv.DictReader(fp, delimiter='|', fieldnames=TERM_FIELDS)
-        rows = list(reader)
+        rows = [row for row in reader if None not in row.values()]
         session.query(
             MtiTerm
         ).filter(
