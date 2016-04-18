@@ -2,7 +2,13 @@ from marshmallow import fields, pre_load
 from marshmallow_sqlalchemy import ModelSchema
 
 from nih_trends.meta import session
-from nih_trends.models import Award, Abstract, MtiTerm
+from nih_trends import models
+
+def split_delimited(value, delimiter=';'):
+    values = value.lower().split(delimiter)
+    values = [value.strip() for value in values]
+    values = [value for value in values if value]
+    return values
 
 class Boolean(fields.Boolean):
     truthy = fields.Boolean.truthy | {'Y'}
@@ -10,7 +16,7 @@ class Boolean(fields.Boolean):
 
 class AwardSchema(ModelSchema):
     class Meta:
-        model = Award
+        model = models.Award
         sqla_session = session
         strict = True
 
@@ -46,7 +52,7 @@ class AwardSchema(ModelSchema):
 
 class AbstractSchema(ModelSchema):
     class Meta:
-        model = Abstract
+        model = models.Abstract
         sqla_session = session
         strict = True
 
@@ -56,12 +62,16 @@ class AbstractSchema(ModelSchema):
 
 class MtiTermSchema(ModelSchema):
     class Meta:
-        model = MtiTerm
+        model = models.MtiTerm
         sqla_session = session
         strict = True
 
-def split_delimited(value, delimiter=';'):
-    values = value.lower().split(delimiter)
-    values = [value.strip() for value in values]
-    values = [value for value in values if value]
-    return values
+class MtiCountSchema(ModelSchema):
+    class Meta:
+        model = models.MtiCountYear
+        sqla_session = session
+
+class MtiDispersionSchema(ModelSchema):
+    class Meta:
+        model = models.MtiDispersion
+        sqla_session = session

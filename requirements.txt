@@ -8,3 +8,5 @@ psycopg2
 requests
 robobrowser
 sqlalchemy
+ujson
+webargs
