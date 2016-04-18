@@ -4,8 +4,11 @@ import os
 import glob
 import logging
 
+import sqlalchemy as sa
+from flask_script import Server
 from flask_script import Manager
 
+from nih_trends.meta import engine
 from nih_trends.load import load_records
 from nih_trends.fetch import fetch_archives
 from nih_trends.models import Award, Abstract
@@ -14,9 +17,23 @@ from nih_trends.mti import Submitter, populate_batch
 from nih_trends.app import make_app
 from nih_trends import config
 
+here = os.path.dirname(__file__)
+logger = logging.getLogger(__file__)
+
 app = make_app()
 manager = Manager(app)
 logging.basicConfig(level=logging.INFO)
+
+manager.add_command('runserver', Server(use_debugger=True, use_reloader=True))
+
+def execute_script(path):
+    logger.info('Executing script {}'.format(path))
+    with open(path) as fp:
+        cmd = '\n'.join(
+            line for line in fp.readlines()
+            if not line.strip().startswith('--')
+        )
+        engine.execute(sa.text(cmd))
 
 @manager.command
 def fetch_awards(overwrite=False):
@@ -55,6 +72,11 @@ def mti_batch_submit():
 @manager.command
 def mti_batch_fetch():
     Submitter.batch_fetch()
+
+@manager.command
+def build_aggregates():
+    for script in ['totals.sql', 'counts.sql', 'variance.sql']:
+        execute_script(os.path.join('scripts', script))
 
 if __name__ == '__main__':
     manager.run()
