@@ -93,4 +93,11 @@ class MtiDispersion(Base):
     stddev = sa.Column(sa.Numeric, index=True)
     disp = sa.Column(sa.Numeric, index=True)
 
+class MtiTermDistinct(Base):
+    __tablename__ = 'mti_term_distinct'
+
+    cui = sa.Column(sa.Text, primary_key=True)
+    term = sa.Column(sa.Text)
+    term_text = sa.Column()
+
 Base.metadata.create_all(engine)
