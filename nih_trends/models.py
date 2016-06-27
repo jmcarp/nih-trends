@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 from nih_trends.meta import Base, engine
 
@@ -98,6 +99,6 @@ class MtiTermDistinct(Base):
 
     cui = sa.Column(sa.Text, primary_key=True)
     term = sa.Column(sa.Text)
-    term_text = sa.Column()
+    term_text = sa.Column(TSVECTOR)
 
 Base.metadata.create_all(engine)
