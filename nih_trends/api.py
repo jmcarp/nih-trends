@@ -10,17 +10,17 @@ from nih_trends.meta import session
 
 blueprint = Blueprint('api', __name__)
 
-def paginate_query(query, page, per_page):
-    per_page = max(per_page, 20)
-    query = query.limit(per_page)
-    query = query.offset((page - 1) * per_page)
-    return query
-
 def sort_query(query, key):
     if key:
         order = sa.desc if key.startswith('-') else sa.asc
         key = key.lstrip('-')
         query = query.order_by(order(key))
+    return query
+
+def paginate_query(query, page, per_page):
+    per_page = max(per_page, 20)
+    query = query.limit(per_page)
+    query = query.offset((page - 1) * per_page)
     return query
 
 def jsonify(value):
@@ -51,10 +51,31 @@ def awards(**kwargs):
         ).filter(
             models.MtiTerm.term.in_(kwargs['term']),
         )
-    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
     query = sort_query(query, kwargs['sort'])
+    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
     return jsonify({
         'results': schemas.AwardSchema(many=True).dump(query).data,
+    })
+
+@blueprint.route('/terms/counts/')
+@use_kwargs({
+    'term': fields.String(required=True),
+    'sort': fields.String(missing='term'),
+    'page': fields.Integer(missing=1),
+    'per_page': fields.Integer(missing=20),
+})
+def terms(**kwargs):
+    query = session.query(models.MtiCountTerm)
+    query = query.filter(
+        sa.and_(*[
+            models.MtiCountTerm.term.ilike('%{}%'.format(part))
+            for part in kwargs['term'].split()
+        ])
+    )
+    query = sort_query(query, kwargs['sort'])
+    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
+    return jsonify({
+        'results': schemas.MtiCountTermSchema(many=True).dump(query).data,
     })
 
 @blueprint.route('/terms/counts/year/')
@@ -66,15 +87,15 @@ def awards(**kwargs):
     'per_page': fields.Integer(missing=20),
 })
 def term_counts_year(**kwargs):
-    query = session.query(models.MtiCountYear)
+    query = session.query(models.MtiCountTermYear)
     if kwargs['year']:
-        query = query.filter(models.MtiCountYear.fy.in_(kwargs['year']))
+        query = query.filter(models.MtiCountTermYear.fy.in_(kwargs['year']))
     if kwargs['term']:
-        query = query.filter(models.MtiCountYear.term.in_(kwargs['term']))
-    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
+        query = query.filter(models.MtiCountTermYear.term.in_(kwargs['term']))
     query = sort_query(query, kwargs['sort'])
+    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
     return jsonify({
-        'results': schemas.MtiCountSchema(many=True).dump(query).data,
+        'results': schemas.MtiCountTermYearSchema(many=True).dump(query).data,
     })
 
 @blueprint.route('/terms/dispersion/')
@@ -88,8 +109,8 @@ def term_dispersion(**kwargs):
     query = session.query(models.MtiDispersion)
     if kwargs['term']:
         query = query.filter(models.MtiDispersion.term.in_(kwargs['term']))
-    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
     query = sort_query(query, kwargs['sort'])
+    query = paginate_query(query, kwargs['page'], kwargs['per_page'])
     return jsonify({
         'results': schemas.MtiDispersionSchema(many=True).dump(query).data,
     })

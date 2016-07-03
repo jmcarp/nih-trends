@@ -76,8 +76,15 @@ class MtiBatchItem(Base):
     batch_id = sa.Column(sa.Integer, sa.ForeignKey('mti_batch.id'), index=True)
     batch = relationship('MtiBatch', backref='items')
 
-class MtiCountYear(Base):
-    __tablename__ = 'mti_count_year'
+class MtiCountTerm(Base):
+    __tablename__ = 'mti_count_term'
+
+    cui = sa.Column(sa.Text, primary_key=True)
+    term = sa.Column(sa.Text)
+    count = sa.Column(sa.BigInteger)
+
+class MtiCountTermYear(Base):
+    __tablename__ = 'mti_count_term_year'
 
     fy = sa.Column(sa.Integer, primary_key=True)
     cui = sa.Column(sa.Text, primary_key=True, index=True)
@@ -93,12 +100,5 @@ class MtiDispersion(Base):
     avg = sa.Column(sa.Numeric, index=True)
     stddev = sa.Column(sa.Numeric, index=True)
     disp = sa.Column(sa.Numeric, index=True)
-
-class MtiTermDistinct(Base):
-    __tablename__ = 'mti_term_distinct'
-
-    cui = sa.Column(sa.Text, primary_key=True)
-    term = sa.Column(sa.Text)
-    term_text = sa.Column(TSVECTOR)
 
 Base.metadata.create_all(engine)

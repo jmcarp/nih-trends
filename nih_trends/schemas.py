@@ -66,9 +66,14 @@ class MtiTermSchema(ModelSchema):
         sqla_session = session
         strict = True
 
-class MtiCountSchema(ModelSchema):
+class MtiCountTermSchema(ModelSchema):
     class Meta:
-        model = models.MtiCountYear
+        model = models.MtiCountTerm
+        sqla_session = session
+
+class MtiCountTermYearSchema(ModelSchema):
+    class Meta:
+        model = models.MtiCountTermYear
         sqla_session = session
 
 class MtiDispersionSchema(ModelSchema):

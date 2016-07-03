@@ -7,7 +7,7 @@ select
   stddev(prop) as stddev,
   avg(prop) as avg,
   stddev(prop) / avg(prop) as disp
-from mti_count_year
+from mti_count_term_year
 group by cui
 ;
 
@@ -17,3 +17,5 @@ create index on mti_dispersion(term);
 create index on mti_dispersion(avg);
 create index on mti_dispersion(stddev);
 create index on mti_dispersion(disp);
+
+analyze mti_dispersion;

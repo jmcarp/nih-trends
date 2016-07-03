@@ -114,7 +114,7 @@ MTI_BATCH_URL = 'http://ii.nlm.nih.gov/Batch/UTS_Required/mti.shtml'
 MTI_CONFIRM_URL = 'http://ii.nlm.nih.gov/cgi-bin/II/Batch/UTS_Required/validate.pl?refDir='  # noqa
 MTI_PATH_PREFIX = '/usr/local/apache/htdocs/II'
 MTI_SCHEDULE_RE = re.compile(r'"(.*)"')
-MAX_SUBMIT = 5
+MAX_SUBMIT = 3
 
 class Submitter:
 

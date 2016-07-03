@@ -73,9 +73,16 @@ def mti_batch_submit():
 def mti_batch_fetch():
     Submitter.batch_fetch()
 
+SCRIPTS = [
+    'count_year.sql',
+    'count_term.sql',
+    'count_term_year.sql',
+    'variance.sql',
+]
+
 @manager.command
 def build_aggregates():
-    for script in ['totals.sql', 'counts.sql', 'variance.sql']:
+    for script in SCRIPTS:
         execute_script(os.path.join('scripts', script))
 
 if __name__ == '__main__':
